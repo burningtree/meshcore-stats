@@ -333,6 +333,15 @@ h4 { font-size: var(--text-lg); }
   color: var(--text-primary);
 }
 
+.node-name a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.node-name a:hover {
+  color: var(--accent-primary);
+}
+
 .node-id {
   font-size: var(--text-xs);
   color: var(--text-tertiary);

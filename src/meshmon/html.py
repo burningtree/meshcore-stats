@@ -645,6 +645,9 @@ def build_page_context(
     # Get node name from config
     node_name = cfg.repeater_display_name if role == "repeater" else cfg.companion_display_name
 
+    # Optional URL — makes the node name a clickable link in the sidebar
+    node_url = cfg.repeater_url if role == "repeater" else cfg.companion_url
+
     # Pubkey prefix from config
     pubkey_pre = cfg.repeater_pubkey_prefix if role == "repeater" else cfg.companion_pubkey_prefix
 
@@ -720,6 +723,7 @@ def build_page_context(
 
         # Node info
         "node_name": node_name,
+        "node_url": node_url,
         "pubkey_pre": pubkey_pre,
         "role": role,
         "status_class": status_class,

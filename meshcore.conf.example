@@ -70,6 +70,10 @@ REPEATER_PASSWORD=your-password
 REPEATER_DISPLAY_NAME=My Repeater
 COMPANION_DISPLAY_NAME=My Companion
 
+# Optional URLs — when set the node name in the sidebar becomes a clickable link
+# REPEATER_URL=https://mc.example.com
+# COMPANION_URL=https://example.com
+
 # Public key prefixes (shown below node name in sidebar, e.g., "!a1b2c3d4")
 # REPEATER_PUBKEY_PREFIX=!a1b2c3d4
 # COMPANION_PUBKEY_PREFIX=!e5f6g7h8

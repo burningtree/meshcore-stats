@@ -287,6 +287,10 @@ class Config:
         # Custom HTML injected into <head> (e.g. analytics scripts)
         self.custom_head_html = get_str("CUSTOM_HEAD_HTML", "") or ""
 
+        # Optional URLs — when set the node name in the sidebar becomes a link
+        self.repeater_url = get_str("REPEATER_URL") or ""
+        self.companion_url = get_str("COMPANION_URL") or ""
+
         # Data source: "device" (serial/tcp/ble) or "ha" (Home Assistant API).
         # In "ha" mode the collectors read meshcore-ha entity states instead of
         # talking to the radio directly, so no serial device is required.

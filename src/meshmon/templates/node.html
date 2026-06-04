@@ -18,7 +18,7 @@
     <div class="node-info">
       <div class="node-header">
         <div>
-          <div class="node-name">{{ node_name }}</div>
+          <div class="node-name">{% if node_url %}<a href="{{ node_url }}" target="_blank" rel="noopener">{{ node_name }}</a>{% else %}{{ node_name }}{% endif %}</div>
 {% if pubkey_pre %}
           <div class="node-id">{{ pubkey_pre }}</div>
 {% endif %}
