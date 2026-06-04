@@ -30,7 +30,7 @@ from collections import defaultdict
 from typing import Any
 
 from . import log
-from .db import insert_metrics
+from .db import get_latest_metrics, insert_metrics
 from .env import Config, get_config
 
 # entity_id pattern: sensor.meshcore_<pubkey>_<rest>. The pubkey segment is the
@@ -381,6 +381,24 @@ def run_ha_collection(
             f"(matched {len(entities)} entities, none recognized)"
         )
         return 1
+
+    # Deduplicate: skip if meshcore-ha hasn't received a fresh LoRa poll yet.
+    # Uptime strictly increases on every real status update; if it matches the
+    # last stored value the HA entity state is stale and all counters are the
+    # same — storing them would produce zero-rate gaps in the charts.
+    sentinel = "uptime" if role == "repeater" else "uptime_secs"
+    new_uptime = metrics.get(sentinel)
+    if new_uptime is not None:
+        try:
+            last = get_latest_metrics(role)
+            if last and last.get(sentinel) == new_uptime:
+                log.debug(
+                    f"{label} (HA): uptime unchanged ({new_uptime:.0f}s) — "
+                    "skipping duplicate sample"
+                )
+                return 0
+        except Exception:
+            pass  # DB may not exist yet on first run; proceed normally
 
     try:
         inserted = insert_metrics(ts=ts, role=role, metrics=metrics)

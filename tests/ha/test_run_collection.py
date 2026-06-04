@@ -59,6 +59,35 @@ def test_run_no_mappable_metrics(ha_env):
     assert run_ha_collection("repeater", states=states) == 1
 
 
+def test_run_repeater_skips_duplicate_uptime(ha_env, all_states):
+    init_db()
+    assert run_ha_collection("repeater", states=all_states) == 0
+    first = get_latest_metrics("repeater")
+    # Second call with same states — uptime unchanged, should be skipped.
+    assert run_ha_collection("repeater", states=all_states) == 0
+    second = get_latest_metrics("repeater")
+    assert second["ts"] == first["ts"]  # timestamp did not advance
+
+
+def test_run_repeater_stores_when_uptime_advances(ha_env, all_states, monkeypatch):
+    from tests.ha.conftest import REPEATER_PUBKEY, REPEATER_SLUG
+
+    init_db()
+    monkeypatch.setattr("meshmon.ha_source.time.time", lambda: 1_000_000.0)
+    assert run_ha_collection("repeater", states=all_states) == 0
+
+    updated = [
+        e for e in all_states
+        if f"sensor.meshcore_{REPEATER_PUBKEY}_uptime_{REPEATER_SLUG}" not in e["entity_id"]
+    ]
+    from tests.ha.conftest import repeater_entity
+    updated.append(repeater_entity("uptime", "17.0", unit_of_measurement="d", raw_seconds=1468800))
+
+    monkeypatch.setattr("meshmon.ha_source.time.time", lambda: 1_000_150.0)
+    assert run_ha_collection("repeater", states=updated) == 0
+    assert get_latest_metrics("repeater")["uptime"] == 1468800.0
+
+
 def test_run_fetch_error_returns_one(ha_env, monkeypatch):
     init_db()
 
