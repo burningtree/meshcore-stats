@@ -320,6 +320,14 @@ def main():
     # Ensure database is initialized
     init_db()
 
+    # When sourcing data from Home Assistant, skip the LoRa query entirely
+    # (no serial device, no circuit breaker needed).
+    cfg = get_config()
+    if cfg.data_source == "ha":
+        from meshmon.ha_source import run_ha_collection
+
+        sys.exit(run_ha_collection("repeater"))
+
     exit_code = asyncio.run(collect_repeater())
     sys.exit(exit_code)
 

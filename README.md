@@ -44,6 +44,7 @@ docker compose logs meshcore-stats | head -20
 
 ## Features
 
+- **Flexible Data Source** - Collect directly from the radio (serial/TCP/BLE), or read from [Home Assistant](#data-source-home-assistant-meshcore-ha) via the meshcore-ha integration
 - **Data Collection** - Metrics from local companion and remote repeater nodes
 - **Interactive Charts** - SVG charts with day/week/month/year views and tooltips
 - **Auto Telemetry Charts** - Repeater `telemetry.*` metrics are charted automatically when telemetry is enabled (`telemetry.voltage.*` excluded)
@@ -213,6 +214,38 @@ MESHCORE=/path/to/meshcore-stats
 
 Serve the `out/` directory with any web server.
 
+## Data Source: Home Assistant (meshcore-ha)
+
+By default MeshCore Stats talks to the radio directly over serial/TCP/BLE. Alternatively, it can read all of its data from a [Home Assistant](https://www.home-assistant.io/) instance running the [meshcore-ha](https://github.com/meshcore-dev/meshcore-ha) integration. In this mode Home Assistant owns the serial device and MeshCore Stats just polls entity states over HA's REST API.
+
+**Why use it**
+
+- **No serial contention** - a USB node can only be owned by one process. If you already run meshcore-ha, let it own the radio and have MeshCore Stats read from it instead of competing for the port.
+- **Run anywhere** - the stats host no longer needs the device attached. It can run on a different machine (or a cloud VM for a public dashboard) and reach HA over the network.
+- **Same dashboard** - the SQLite store, charts, reports, and static site are unchanged; only the collector's data source differs. MeshCore Stats keeps its own long-term history by polling HA's *current* entity state on the usual schedule, so HA's recorder retention does not limit your charts.
+
+**Requirements**
+
+- Home Assistant with the [meshcore-ha](https://github.com/meshcore-dev/meshcore-ha) integration installed and reporting your nodes.
+- A [long-lived access token](https://www.home-assistant.io/docs/authentication/#your-account-profile) (HA → profile → Security → Long-lived access tokens).
+- The public-key prefix of each node, as it appears in the meshcore-ha entity IDs (`sensor.meshcore_<pubkey>_<metric>_<node_name>`).
+
+**Configure**
+
+```ini
+DATA_SOURCE=ha
+HA_URL=http://homeassistant.local:8123
+HA_TOKEN=your-long-lived-access-token
+
+# Select your nodes by public-key prefix (matches the entity IDs)
+HA_REPEATER_PUBKEY=a1b2c3d4e5
+HA_COMPANION_PUBKEY=f6e7d8c9b0
+```
+
+In this mode the `MESH_*` connection settings and serial device mapping are ignored, and no `devices:` entry is needed in `docker-compose.override.yml`. The existing collection schedule is reused: the companion is refreshed every minute and the repeater every 15 minutes (values change no faster than meshcore-ha's own polling interval).
+
+> **Note:** Status metrics (battery, uptime, packet counters, airtime, RSSI/SNR, noise floor, contacts) are mapped from meshcore-ha. Environmental `telemetry.*` charts are not yet sourced from Home Assistant.
+
 ## Platform Notes
 
 <details>
@@ -286,6 +319,14 @@ Use the TCP bridge approach (similar to macOS) or native installation.
 | `MESH_SERIAL_PORT` | auto | Serial port path |
 | `MESH_TCP_HOST` | localhost | TCP host (for TCP transport) |
 | `MESH_TCP_PORT` | 5000 | TCP port (for TCP transport) |
+| **Data Source** | | |
+| `DATA_SOURCE` | device | `device` (radio) or `ha` (Home Assistant) |
+| `HA_URL` | - | Home Assistant base URL (required for `ha`) |
+| `HA_TOKEN` | - | Long-lived access token (required for `ha`) |
+| `HA_REPEATER_PUBKEY` | `REPEATER_PUBKEY_PREFIX` | Repeater public-key prefix to read from HA |
+| `HA_COMPANION_PUBKEY` | `COMPANION_PUBKEY_PREFIX` | Companion public-key prefix to read from HA |
+| `HA_TIMEOUT_S` | 10 | HTTP timeout for HA requests |
+| `HA_VERIFY_TLS` | 1 | Verify TLS cert (set `0` for self-signed HTTPS) |
 | **Display** | | |
 | `REPEATER_DISPLAY_NAME` | Repeater Node | Name shown in UI |
 | `COMPANION_DISPLAY_NAME` | Companion Node | Name shown in UI |

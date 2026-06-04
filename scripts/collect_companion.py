@@ -204,6 +204,13 @@ def main():
     # Ensure database is initialized
     init_db()
 
+    # When sourcing data from Home Assistant, skip the serial device entirely.
+    cfg = get_config()
+    if cfg.data_source == "ha":
+        from meshmon.ha_source import run_ha_collection
+
+        sys.exit(run_ha_collection("companion"))
+
     exit_code = asyncio.run(collect_companion())
     sys.exit(exit_code)
 

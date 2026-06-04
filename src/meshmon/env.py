@@ -137,6 +137,17 @@ def get_unit_system(key: str, default: str = "metric") -> str:
 class Config:
     """Configuration loaded from environment variables."""
 
+    # Data source selection
+    data_source: str
+
+    # Home Assistant data source (used when data_source == "ha")
+    ha_url: str | None
+    ha_token: str | None
+    ha_repeater_pubkey: str | None
+    ha_companion_pubkey: str | None
+    ha_verify_tls: bool
+    ha_timeout_s: int
+
     # Connection settings
     mesh_transport: str
     mesh_serial_port: str | None
@@ -275,6 +286,27 @@ class Config:
 
         # Custom HTML injected into <head> (e.g. analytics scripts)
         self.custom_head_html = get_str("CUSTOM_HEAD_HTML", "") or ""
+
+        # Data source: "device" (serial/tcp/ble) or "ha" (Home Assistant API).
+        # In "ha" mode the collectors read meshcore-ha entity states instead of
+        # talking to the radio directly, so no serial device is required.
+        self.data_source = (get_str("DATA_SOURCE", "device") or "device").strip().lower()
+
+        # Home Assistant connection (used when data_source == "ha")
+        self.ha_url = get_str("HA_URL")
+        self.ha_token = get_str("HA_TOKEN")
+        # Node selection by public-key prefix. Falls back to the device-mode
+        # identity settings so existing configs work with minimal changes.
+        self.ha_repeater_pubkey = (
+            get_str("HA_REPEATER_PUBKEY")
+            or self.repeater_pubkey_prefix
+            or self.repeater_key_prefix
+        )
+        self.ha_companion_pubkey = (
+            get_str("HA_COMPANION_PUBKEY") or self.companion_pubkey_prefix
+        )
+        self.ha_verify_tls = get_bool("HA_VERIFY_TLS", True)
+        self.ha_timeout_s = get_int("HA_TIMEOUT_S", 10)
 
 # Global config instance
 _config: Config | None = None

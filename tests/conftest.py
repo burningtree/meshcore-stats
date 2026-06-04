@@ -20,6 +20,8 @@ def clean_env(monkeypatch):
         "RADIO_",
         "STATE_DIR",
         "OUT_DIR",
+        "DATA_SOURCE",
+        "HA_",
     )
 
     for key in list(os.environ.keys()):

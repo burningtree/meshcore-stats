@@ -33,6 +33,28 @@ MESH_SERIAL_PORT=/dev/ttyUSB0
 # MESH_BLE_PIN=123456
 
 # =============================================================================
+# Data Source: Home Assistant (instead of a directly-connected radio)
+# =============================================================================
+# Set DATA_SOURCE=ha to read metrics from a Home Assistant instance running the
+# meshcore-ha integration (https://github.com/meshcore-dev/meshcore-ha) instead
+# of talking to the radio. HA owns the serial device; this app just polls the
+# entity states over the REST API, so no MESH_* / serial settings are needed and
+# this can run on a different host (including remotely).
+#
+# Nodes are selected by public-key prefix, matching the meshcore-ha entity IDs
+# (sensor.meshcore_<pubkey>_<metric>_<node_name>). HA_*_PUBKEY fall back to
+# REPEATER_PUBKEY_PREFIX / COMPANION_PUBKEY_PREFIX if unset.
+#
+# DATA_SOURCE=ha
+# HA_URL=http://homeassistant.local:8123
+# HA_TOKEN=your-long-lived-access-token
+# HA_REPEATER_PUBKEY=a1b2c3d4e5
+# HA_COMPANION_PUBKEY=f6e7d8c9b0
+# HA_TIMEOUT_S=10
+# Set to 0 to skip TLS certificate verification (self-signed HTTPS only):
+# HA_VERIFY_TLS=1
+
+# =============================================================================
 # Remote Repeater Identity
 # =============================================================================
 # At least REPEATER_NAME or REPEATER_KEY_PREFIX is required to identify your repeater

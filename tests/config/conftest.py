@@ -31,7 +31,8 @@ def isolate_config_loading(monkeypatch):
     # Clear all env vars that might affect config
     env_prefixes = (
         "MESH_", "REPEATER_", "COMPANION_", "REMOTE_",
-        "TELEMETRY_", "REPORT_", "RADIO_", "STATE_DIR", "OUT_DIR"
+        "TELEMETRY_", "REPORT_", "RADIO_", "STATE_DIR", "OUT_DIR",
+        "DATA_SOURCE", "HA_",
     )
     for key in list(os.environ.keys()):
         for prefix in env_prefixes:
