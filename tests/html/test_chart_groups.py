@@ -47,3 +47,33 @@ def test_repeater_has_no_telemetry_group_when_disabled(configured_env, monkeypat
     groups = html.build_chart_groups("repeater", "day", chart_stats)
 
     assert "Telemetry" not in [group["title"] for group in groups]
+
+
+def test_companion_battery_chart_hidden_when_no_battery(configured_env, monkeypatch):
+    """Battery charts are dropped when the node reports no battery (all zero)."""
+    monkeypatch.setattr(html, "_load_svg_content", lambda path: "<svg></svg>")
+
+    chart_stats = {
+        "battery_mv": {"day": {"min": 0, "avg": 0, "max": 0, "current": 0}},
+        "contacts": {"day": {"min": 700, "avg": 701, "max": 702, "current": 702}},
+    }
+
+    groups = html.build_chart_groups("companion", "day", chart_stats)
+
+    assert "Power" not in [group["title"] for group in groups]
+    # Non-battery metrics are still charted.
+    assert any(chart["metric"] == "contacts" for group in groups for chart in group["charts"])
+
+
+def test_companion_battery_chart_shown_when_battery_present(configured_env, monkeypatch):
+    """Battery charts render normally when the node has a real battery."""
+    monkeypatch.setattr(html, "_load_svg_content", lambda path: "<svg></svg>")
+
+    chart_stats = {
+        "battery_mv": {"day": {"min": 3.5, "avg": 3.7, "max": 3.9, "current": 3.8}},
+    }
+
+    groups = html.build_chart_groups("companion", "day", chart_stats)
+
+    metrics = [chart["metric"] for group in groups for chart in group["charts"]]
+    assert "battery_mv" in metrics

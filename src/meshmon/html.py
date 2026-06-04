@@ -163,10 +163,12 @@ def build_repeater_metrics(row: dict | None) -> dict:
             "traffic_metrics": [],
         }
 
-    # Battery (stored in millivolts, convert to volts)
+    # Battery (stored in millivolts, convert to volts). A reading of 0 means the
+    # node has no battery (e.g. USB-powered), so battery/charge are hidden.
     bat_mv = row.get("bat")
-    bat_v = bat_mv / 1000.0 if bat_mv is not None else None
-    bat_pct = row.get("bat_pct")
+    has_battery = bat_mv is not None and bat_mv > 0
+    bat_v = bat_mv / 1000.0 if has_battery else None
+    bat_pct = row.get("bat_pct") if has_battery else None
 
     # Critical metrics (top 4 in sidebar)
     critical_metrics = []
@@ -277,10 +279,12 @@ def build_companion_metrics(row: dict | None) -> dict:
             "traffic_metrics": [],
         }
 
-    # Battery (stored in millivolts, convert to volts)
+    # Battery (stored in millivolts, convert to volts). A reading of 0 means the
+    # node has no battery (e.g. USB-powered), so battery/charge are hidden.
     bat_mv = row.get("battery_mv")
-    bat_v = bat_mv / 1000.0 if bat_mv is not None else None
-    bat_pct = row.get("bat_pct")
+    has_battery = bat_mv is not None and bat_mv > 0
+    bat_v = bat_mv / 1000.0 if has_battery else None
+    bat_pct = row.get("bat_pct") if has_battery else None
 
     # Critical metrics
     critical_metrics = []
@@ -534,11 +538,21 @@ def build_chart_groups(
     if chart_stats is None:
         chart_stats = {}
 
+    # Hide all battery charts (voltage + percentage) when the node has no
+    # battery: the voltage readings are all zero (e.g. a USB-powered node).
+    voltage_metric = "battery_mv" if role == "companion" else "bat"
+    voltage_max = chart_stats.get(voltage_metric, {}).get(period, {}).get("max")
+    no_battery = voltage_max is not None and voltage_max <= 0
+    battery_metrics = {"battery_mv", "bat", "bat_pct"}
+
     groups = []
     for group in groups_config:
         charts = []
         for metric in group["metrics"]:
             if metric not in chart_metrics:
+                continue
+
+            if no_battery and metric in battery_metrics:
                 continue
 
             # Try SVG first (new format), fall back to PNG (legacy)

@@ -43,6 +43,21 @@ class TestBuildRepeaterMetrics:
         result = build_repeater_metrics({})
         assert isinstance(result, dict)
 
+    def test_battery_hidden_when_zero(self):
+        """No battery (bat=0) hides Battery/Charge but keeps other metrics."""
+        result = build_repeater_metrics({"bat": 0, "last_rssi": -60})
+        labels = [m["label"] for m in result["critical_metrics"]]
+        assert "Battery" not in labels
+        assert "Charge" not in labels
+        assert "RSSI" in labels
+
+    def test_battery_shown_when_present(self):
+        """A real battery (bat>0) shows Battery and Charge."""
+        result = build_repeater_metrics({"bat": 4120, "bat_pct": 94})
+        labels = [m["label"] for m in result["critical_metrics"]]
+        assert "Battery" in labels
+        assert "Charge" in labels
+
 
 class TestBuildCompanionMetrics:
     """Tests for build_companion_metrics function."""
@@ -69,6 +84,21 @@ class TestBuildCompanionMetrics:
         """Handles empty dict."""
         result = build_companion_metrics({})
         assert isinstance(result, dict)
+
+    def test_battery_hidden_when_zero(self):
+        """No battery (battery_mv=0) hides Battery/Charge but keeps Contacts."""
+        result = build_companion_metrics({"battery_mv": 0, "contacts": 702})
+        labels = [m["label"] for m in result["critical_metrics"]]
+        assert "Battery" not in labels
+        assert "Charge" not in labels
+        assert "Contacts" in labels
+
+    def test_battery_shown_when_present(self):
+        """A real battery (battery_mv>0) shows Battery and Charge."""
+        result = build_companion_metrics({"battery_mv": 3850, "bat_pct": 75})
+        labels = [m["label"] for m in result["critical_metrics"]]
+        assert "Battery" in labels
+        assert "Charge" in labels
 
 
 class TestBuildNodeDetails:
