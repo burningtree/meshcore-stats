@@ -114,6 +114,16 @@ class TestIndexEntitiesByKey:
         # No shared slug -> keys retain their full remainder.
         assert set(idx) == {"bat_x", "uptime_y"}
 
+    def test_companion_outlier_does_not_break_slug(self, companion_entities):
+        # The slug-less `companion_prefix` entity must not defeat slug detection
+        # for the rest of the device (this was the real-world companion bug).
+        idx = index_entities_by_key(companion_entities, COMPANION_PUBKEY)
+        assert "battery_voltage" in idx
+        assert "node_count" in idx
+        # The slug-less special sensor is kept under its own (unstripped) key.
+        assert "companion_prefix" in idx
+        assert not any(k.endswith("home_node") for k in idx)
+
     def test_entity_equal_to_slug_is_skipped(self):
         states = [
             make_entity("sensor.meshcore_bbbbbbbbbb_bat_node", "4.0", raw_millivolts=4000),
@@ -145,6 +155,12 @@ class TestMapRepeater:
         assert metrics["recv_direct"] == 4328.0
         assert metrics["flood_dups"] == 59799.0
         assert metrics["recv_errors"] == 3.0
+
+    def test_maps_telemetry_channels(self, repeater_entities):
+        idx = index_entities_by_key(repeater_entities, REPEATER_PUBKEY)
+        metrics = map_repeater_metrics(idx)
+        assert metrics["telemetry.temperature.1"] == 21.5
+        assert metrics["telemetry.voltage.1"] == 4.0
 
     def test_derived_sensors_not_mapped(self, repeater_entities):
         idx = index_entities_by_key(repeater_entities, REPEATER_PUBKEY)

@@ -104,25 +104,32 @@ def _state_value(entity: dict[str, Any]) -> float | None:
 
 
 def _common_token_suffix(remainders: list[str]) -> str:
-    """Longest ``_``-delimited token sequence shared at the end of all strings.
+    """Most frequent ``_``-delimited trailing token sequence (the node slug).
 
-    Every entity for a single device ends with the same node-name slug, while
-    the metric keys differ. The common trailing tokens are therefore the slug,
-    which we strip to recover each sensor key.
+    Every entity for a device ends with the same node-name slug, while the
+    metric keys differ — so the shared trailing tokens are the slug, which we
+    strip to recover each sensor key. A few special sensors omit the slug
+    entirely (e.g. ``companion_prefix``), so we extend the suffix while a strict
+    majority of entities agree, rather than requiring *all* of them to match.
     """
     if not remainders:
         return ""
+    total = len(remainders)
     token_lists = [r.split("_") for r in remainders]
-    suffix: list[str] = []
+    suffix: tuple[str, ...] = ()
     depth = 1
     while True:
-        first = token_lists[0]
-        if len(first) < depth:
+        counts: dict[tuple[str, ...], int] = {}
+        for tokens in token_lists:
+            if len(tokens) >= depth:
+                candidate = tuple(tokens[-depth:])
+                counts[candidate] = counts.get(candidate, 0) + 1
+        if not counts:
             break
-        token = first[-depth]
-        if any(len(tl) < depth or tl[-depth] != token for tl in token_lists):
+        best, best_count = max(counts.items(), key=lambda item: item[1])
+        if best_count * 2 <= total:  # no strict majority at this depth
             break
-        suffix.insert(0, token)
+        suffix = best
         depth += 1
     return "_".join(suffix)
 
@@ -226,14 +233,39 @@ def _map_metrics(
     return metrics
 
 
+# meshcore-ha exposes environmental telemetry as per-channel sensors keyed
+# ch<channel>_<lpp_type> (e.g. ch1_temperature). The DB/chart layer stores these
+# as telemetry.<type>.<channel> and auto-charts them (telemetry.voltage.* and
+# telemetry.gps.* are collected but intentionally not charted).
+_TELEMETRY_RE = re.compile(r"^ch(\d+)_(.+)$")
+
+
+def _map_telemetry(entities: dict[str, dict[str, Any]]) -> dict[str, float]:
+    """Map ch<N>_<type> telemetry sensors to telemetry.<type>.<N> metrics."""
+    metrics: dict[str, float] = {}
+    for key, entity in entities.items():
+        match = _TELEMETRY_RE.match(key)
+        if not match:
+            continue
+        channel, sensor_type = match.group(1), match.group(2)
+        value = _state_value(entity)
+        if value is not None:
+            metrics[f"telemetry.{sensor_type}.{channel}"] = value
+    return metrics
+
+
 def map_repeater_metrics(entities: dict[str, dict[str, Any]]) -> dict[str, float]:
     """Map indexed repeater entities to repeater firmware field names."""
-    return _map_metrics(entities, REPEATER_KEY_MAP)
+    metrics = _map_metrics(entities, REPEATER_KEY_MAP)
+    metrics.update(_map_telemetry(entities))
+    return metrics
 
 
 def map_companion_metrics(entities: dict[str, dict[str, Any]]) -> dict[str, float]:
     """Map indexed companion entities to companion firmware field names."""
-    return _map_metrics(entities, COMPANION_KEY_MAP)
+    metrics = _map_metrics(entities, COMPANION_KEY_MAP)
+    metrics.update(_map_telemetry(entities))
+    return metrics
 
 
 def fetch_states(cfg: Config) -> list[dict[str, Any]]:

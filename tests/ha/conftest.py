@@ -8,7 +8,10 @@ import pytest
 
 REPEATER_PUBKEY = "a1b2c3d4e5"
 REPEATER_SLUG = "my_repeater"
-COMPANION_PUBKEY = "f6e7d8c9b0"
+# The configured companion prefix can be longer than the segment meshcore-ha
+# puts in the local-node entity_id (it uses pubkey[:6] for the local node).
+COMPANION_PUBKEY = "f7f57b8e54"
+COMPANION_SEGMENT = "f7f57b"
 COMPANION_SLUG = "home_node"
 
 
@@ -32,7 +35,7 @@ def repeater_entity(key: str, state, **attrs) -> dict:
 
 def companion_entity(key: str, state, **attrs) -> dict:
     return make_entity(
-        f"sensor.meshcore_{COMPANION_PUBKEY}_{key}_{COMPANION_SLUG}", state, **attrs
+        f"sensor.meshcore_{COMPANION_SEGMENT}_{key}_{COMPANION_SLUG}", state, **attrs
     )
 
 
@@ -58,6 +61,9 @@ def repeater_entities() -> list[dict]:
         repeater_entity("flood_dups", "59799"),
         repeater_entity("direct_dups", "8"),
         repeater_entity("recv_errors", "3"),
+        # Environmental telemetry (charted via telemetry.* auto-discovery).
+        repeater_entity("ch1_temperature", "21.5", unit_of_measurement="°C"),
+        repeater_entity("ch1_voltage", "4.0", unit_of_measurement="V"),
         # Derived sensors that share a base name; must NOT clobber the base metric.
         repeater_entity("nb_recv_rate", "12.0", unit_of_measurement="msg/min"),
         repeater_entity("airtime_utilization", "4.5", unit_of_measurement="%"),
@@ -86,6 +92,9 @@ def companion_entities() -> list[dict]:
         companion_entity("node_count", "6"),
         companion_entity("tx_power", "22", unit_of_measurement="dBm"),
         companion_entity("frequency", "869.525", unit_of_measurement="MHz"),
+        # Special local-node sensor with NO node-name slug; must not break
+        # slug detection for the rest of the device's entities.
+        make_entity(f"sensor.meshcore_{COMPANION_SEGMENT}_companion_prefix", "f7f57b"),
     ]
 
 

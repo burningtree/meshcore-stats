@@ -244,7 +244,7 @@ HA_COMPANION_PUBKEY=f6e7d8c9b0
 
 In this mode the `MESH_*` connection settings and serial device mapping are ignored, and no `devices:` entry is needed in `docker-compose.override.yml`. The existing collection schedule is reused: the companion is refreshed every minute and the repeater every 15 minutes (values change no faster than meshcore-ha's own polling interval).
 
-> **Note:** Status metrics (battery, uptime, packet counters, airtime, RSSI/SNR, noise floor, contacts) are mapped from meshcore-ha. Environmental `telemetry.*` charts are not yet sourced from Home Assistant.
+> **Note:** Status metrics (battery, uptime, packet counters, airtime, RSSI/SNR, noise floor, contacts) and environmental telemetry (meshcore-ha's `ch<N>_<type>` sensors → `telemetry.<type>.<N>` charts) are mapped automatically. What you get depends on what meshcore-ha publishes for each node — repeaters typically expose the full status set, while a local/companion node may only expose battery and contact count unless you enable its diagnostic sensors in meshcore-ha.
 
 ## Platform Notes
 
