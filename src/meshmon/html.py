@@ -89,8 +89,16 @@ COMPANION_CHART_GROUPS = [
         "metrics": ["contacts", "uptime_secs"],
     },
     {
+        "title": "Signal Quality",
+        "metrics": ["last_rssi", "last_snr", "noise_floor"],
+    },
+    {
         "title": "Packet Traffic",
-        "metrics": ["recv", "sent"],
+        "metrics": ["recv", "sent", "flood_rx", "flood_tx", "direct_rx", "direct_tx"],
+    },
+    {
+        "title": "Airtime",
+        "metrics": ["tx_air_secs", "rx_air_secs"],
     },
 ]
 
@@ -466,10 +474,11 @@ def _format_stat_value(value: float | None, metric: str) -> str:
     # Packet counters (per-minute rate from charts.py)
     elif metric in ("recv", "sent", "nb_recv", "nb_sent",
                     "recv_flood", "sent_flood", "recv_direct", "sent_direct",
+                    "flood_rx", "flood_tx", "direct_rx", "direct_tx",
                     "flood_dups", "direct_dups"):
         return f"{value:.1f}/min"
     # Airtime (per-minute rate from charts.py)
-    elif metric in ("airtime", "rx_airtime"):
+    elif metric in ("airtime", "rx_airtime", "tx_air_secs", "rx_air_secs"):
         return f"{value:.1f} s/min"
     else:
         return f"{value:.2f}"

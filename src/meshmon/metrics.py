@@ -175,6 +175,51 @@ METRIC_CONFIG: dict[str, MetricConfig] = {
     ),
 
     # -------------------------------------------------------------------------
+    # Companion self-diagnostic metrics (firmware names from get_stats_*)
+    # Available when meshcore-ha self-diagnostics are enabled.
+    # -------------------------------------------------------------------------
+    "tx_air_secs": MetricConfig(
+        label="Transmit Airtime",
+        unit="s/min",
+        type="counter",
+        scale=60,
+    ),
+    "rx_air_secs": MetricConfig(
+        label="Receive Airtime",
+        unit="s/min",
+        type="counter",
+        scale=60,
+    ),
+    "flood_tx": MetricConfig(
+        label="Flood Packets Sent",
+        unit="/min",
+        type="counter",
+        scale=60,
+    ),
+    "direct_tx": MetricConfig(
+        label="Direct Packets Sent",
+        unit="/min",
+        type="counter",
+        scale=60,
+    ),
+    "flood_rx": MetricConfig(
+        label="Flood Packets Received",
+        unit="/min",
+        type="counter",
+        scale=60,
+    ),
+    "direct_rx": MetricConfig(
+        label="Direct Packets Received",
+        unit="/min",
+        type="counter",
+        scale=60,
+    ),
+    "queue_len": MetricConfig(
+        label="Transmit Queue Depth",
+        unit="",
+    ),
+
+    # -------------------------------------------------------------------------
     # Derived metrics (computed at query time, not stored in database)
     # -------------------------------------------------------------------------
     "bat_pct": MetricConfig(
@@ -195,6 +240,17 @@ COMPANION_CHART_METRICS = [
     "contacts",
     "recv",
     "sent",
+    # Self-diagnostic metrics (available when meshcore-ha self-diagnostics enabled)
+    "last_rssi",
+    "last_snr",
+    "noise_floor",
+    "tx_air_secs",
+    "rx_air_secs",
+    "flood_tx",
+    "direct_tx",
+    "flood_rx",
+    "direct_rx",
+    "queue_len",
 ]
 
 REPEATER_CHART_METRICS = [
