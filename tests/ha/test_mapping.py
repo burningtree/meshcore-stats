@@ -142,7 +142,7 @@ class TestMapRepeater:
 
         # Lossless via raw_* attributes.
         assert metrics["bat"] == 4047.0
-        assert metrics["uptime"] == 1441998.0
+        assert metrics["uptime"] == 1441998.0  # raw_seconds preferred over state
         assert metrics["airtime"] == 64461.0
         assert metrics["rx_airtime"] == 146626.0
         # Direct counters / radio values.
@@ -191,6 +191,42 @@ class TestMapRepeater:
         metrics = map_repeater_metrics(idx)
         assert "bat" not in metrics
         assert metrics["nb_recv"] == 100.0
+
+    def test_secs_unit_conversion_days(self):
+        entities = [
+            repeater_entity("uptime", "1.98", unit_of_measurement="d"),
+            repeater_entity("nb_recv", "100"),  # second entity so slug is detected
+        ]
+        idx = index_entities_by_key(entities, REPEATER_PUBKEY)
+        metrics = map_repeater_metrics(idx)
+        assert abs(metrics["uptime"] - 1.98 * 86400) < 1.0
+
+    def test_secs_unit_conversion_hours(self):
+        entities = [
+            repeater_entity("airtime", "2.5", unit_of_measurement="h"),
+            repeater_entity("nb_recv", "100"),
+        ]
+        idx = index_entities_by_key(entities, REPEATER_PUBKEY)
+        metrics = map_repeater_metrics(idx)
+        assert metrics["airtime"] == 2.5 * 3600.0
+
+    def test_secs_unit_conversion_seconds(self):
+        entities = [
+            repeater_entity("uptime", "118.0", unit_of_measurement="s"),
+            repeater_entity("nb_recv", "100"),
+        ]
+        idx = index_entities_by_key(entities, REPEATER_PUBKEY)
+        metrics = map_repeater_metrics(idx)
+        assert metrics["uptime"] == 118.0
+
+    def test_secs_unit_conversion_minutes_default(self):
+        entities = [
+            repeater_entity("airtime", "10.0", unit_of_measurement="min"),
+            repeater_entity("nb_recv", "100"),
+        ]
+        idx = index_entities_by_key(entities, REPEATER_PUBKEY)
+        metrics = map_repeater_metrics(idx)
+        assert metrics["airtime"] == 600.0
 
     def test_skips_unknown_secs_and_direct(self):
         entities = [

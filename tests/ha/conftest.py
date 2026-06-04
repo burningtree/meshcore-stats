@@ -45,7 +45,9 @@ def repeater_entities() -> list[dict]:
     return [
         repeater_entity("bat", "4.047", unit_of_measurement="V", raw_millivolts=4047),
         repeater_entity("battery_percentage", "78", unit_of_measurement="%"),
-        repeater_entity("uptime", "24033.3", unit_of_measurement="min", raw_seconds=1441998),
+        # HA auto-converts suggested_unit "d" for uptime. raw_seconds is set in
+        # the coordinator-fallback path and used when available.
+        repeater_entity("uptime", "16.689", unit_of_measurement="d", raw_seconds=1441998),
         repeater_entity("airtime", "1074.4", unit_of_measurement="min", raw_seconds=64461),
         repeater_entity("rx_airtime", "2443.8", unit_of_measurement="min", raw_seconds=146626),
         repeater_entity("last_rssi", "-63"),

@@ -221,7 +221,18 @@ def _map_metrics(
                 continue
             value = _state_value(entity)
             if value is not None:
-                metrics[db_metric] = value * 60.0
+                # HA may auto-convert the display unit (min → d via
+                # suggested_unit_of_measurement). Convert back to seconds
+                # using whatever unit the entity is actually reporting.
+                unit = attrs.get("unit_of_measurement", "min")
+                if unit == "d":
+                    metrics[db_metric] = value * 86400.0
+                elif unit in ("h", "hr"):
+                    metrics[db_metric] = value * 3600.0
+                elif unit in ("s", "sec"):
+                    metrics[db_metric] = value
+                else:  # default: minutes
+                    metrics[db_metric] = value * 60.0
         elif kind == "count_minus_one":
             value = _state_value(entity)
             if value is not None:
